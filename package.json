@@ -13,7 +13,7 @@
     "deploy": "git push heroku master -f",
     "dev": "react-scripts start",
     "build": "react-scripts build",
-    "test": "truffle compile && mocha --exit --recursive test",
+    "test": "truffle compile && mocha --exit --recursive -w test",
     "test:fe": "react-scripts test",
     "cov": "truffle run coverage",
     "lint": "yarn lint:js || yarn lint:sol",

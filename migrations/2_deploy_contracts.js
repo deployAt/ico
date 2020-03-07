@@ -4,9 +4,9 @@
 //truffle exec scripts/seed.js
 //truffle exec scripts/seed.js --network kovan
 //heroku logs --tail
-const Token = artifacts.require('Token')
+const ZBToken = artifacts.require('ZBToken')
 
 module.exports = async function (deployer) {
   // const accounts = await web3.eth.getAccounts()
-  await deployer.deploy(Token)
+  await deployer.deploy(ZBToken)
 }
