@@ -3,6 +3,8 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   plugins: [
     "@typescript-eslint",
+    "mocha-no-only",
+    "promise",
   ],
   extends: [
     "react-app",

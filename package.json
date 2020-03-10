@@ -43,18 +43,20 @@
     "@truffle/hdwallet-provider": "1.0.32",
     "@types/node": "13.9.0",
     "@types/ramda": "0.26.43",
-    "@types/react-dom": "16.9.5",
     "@types/react": "16.9.23",
+    "@types/react-dom": "16.9.5",
     "@types/styled-components": "5.0.1",
     "chai": "4.2.0",
     "dotenv": "8.2.0",
+    "eslint-plugin-mocha-no-only": "1.1.0",
+    "eslint-plugin-promise": "4.2.1",
     "mocha": "7.1.0",
     "solc": "0.5.16",
     "solhint": "3.0.0-rc.5",
     "solidity-coverage": "0.7.2",
     "truffle": "5.1.15",
-    "typescript-styled-plugin": "0.15.0",
-    "typescript": "3.8.3"
+    "typescript": "3.8.3",
+    "typescript-styled-plugin": "0.15.0"
   },
   "browserslist": {
     "production": [
