@@ -16,7 +16,7 @@
     "test": "truffle compile && mocha --exit --recursive -w test",
     "test:fe": "react-scripts test",
     "cov": "truffle run coverage",
-    "lint": "yarn lint:js || yarn lint:sol",
+    "lint": "npm run lint:js && npm run lint:sol",
     "lint:js": "eslint --ignore-path .gitignore --ext .js,.jsx,.ts,.tsx ./",
     "lint:sol": "solhint \"src/contracts/**/*.sol\"",
     "eject": "react-scripts eject"

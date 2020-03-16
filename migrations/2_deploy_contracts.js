@@ -8,5 +8,5 @@ const ZBToken = artifacts.require('ZBToken')
 
 module.exports = async function (deployer) {
   // const accounts = await web3.eth.getAccounts()
-  await deployer.deploy(ZBToken)
+  await deployer.deploy(ZBToken, 'ZBToken', 'ZB', 18)
 }
