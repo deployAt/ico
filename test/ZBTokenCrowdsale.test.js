@@ -3,6 +3,7 @@ const {
   BN,
   ether,
   send,
+  time,
   // constants,    // Common constants, like the zero address and largest integers
   // expectEvent,  // Assertions for emitted events
   expectRevert
@@ -22,6 +23,7 @@ describe('ZBTokenCrowdsale', () => {
   //crowdsale
   const rate = 500
   const wallet = crowdsaleWallet
+  //cap
   const cap = ether('100')
 
   // investor caps
@@ -30,13 +32,32 @@ describe('ZBTokenCrowdsale', () => {
   const investorHardCap = ether('10')
   const moreThanInvestorHardCap = ether('10.01')
 
+  before(async () => {
+    // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
+    await time.advanceBlock()
+  })
+
   beforeEach(async () => {
+    //time
+    const openingTime = (await time.latest()).add(time.duration.weeks(1))
+    const closingTime = openingTime.add(time.duration.weeks(1))
+
     // Deploy token
     this.token = await ZBToken.new(name, symbol, decimals)
     // Deploy crowdsale
-    this.crowdsale = await ZBTokenCrowdsale.new(rate, wallet, this.token.address, cap)
+    this.crowdsale = await ZBTokenCrowdsale.new(
+      rate,
+      wallet,
+      this.token.address,
+      cap,
+      openingTime,
+      closingTime
+    )
     // Add crowdsale as a minter
     await this.token.addMinter(this.crowdsale.address)
+
+    //time crowdsale
+    await time.increaseTo(openingTime.add(time.duration.hours(1)))
   })
 
   describe('crowdsale', () => {
@@ -131,6 +152,13 @@ describe('ZBTokenCrowdsale', () => {
         const raised = await this.crowdsale.weiRaised()
         raised.should.be.bignumber.equal(value)
       })
+    })
+  })
+
+  describe('timed crowdsale', () => {
+    it('is open', async () => {
+      const isClosed = await this.crowdsale.hasClosed()
+      isClosed.should.be.false
     })
   })
 })
