@@ -5,7 +5,9 @@ import "./lib/crowdsale/Crowdsale.sol";
 import "./lib/crowdsale/emission/MintedCrowdsale.sol";
 import "./lib/crowdsale/validation/CappedCrowdsale.sol";
 import "./lib/crowdsale/validation/TimedCrowdsale.sol";
-contract ZBTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedCrowdsale {
+import "./lib/crowdsale/validation/WhitelistCrowdsale.sol";
+
+contract ZBTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedCrowdsale, WhitelistCrowdsale {
     using SafeMath for uint256;
 
     //track investor contributions

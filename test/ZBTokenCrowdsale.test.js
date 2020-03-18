@@ -13,7 +13,7 @@ const ZBTokenCrowdsale = contract.fromArtifact('ZBTokenCrowdsale')
 const ZBToken = contract.fromArtifact('ZBToken')
 
 describe('ZBTokenCrowdsale', () => {
-  const [crowdsaleWallet, investor1, investor2] = accounts
+  const [crowdsaleWallet, investor1, investor2, investor3] = accounts
 
   //token
   const name = 'ZBToken'
@@ -55,6 +55,10 @@ describe('ZBTokenCrowdsale', () => {
     )
     // Add crowdsale as a minter
     await this.token.addMinter(this.crowdsale.address)
+
+    // add investors to crowdsale
+    await this.crowdsale.addWhitelisted(investor1)
+    await this.crowdsale.addWhitelisted(investor2)
 
     //time crowdsale
     await time.increaseTo(openingTime.add(time.duration.hours(1)))
@@ -159,6 +163,16 @@ describe('ZBTokenCrowdsale', () => {
     it('is open', async () => {
       const isClosed = await this.crowdsale.hasClosed()
       isClosed.should.be.false
+    })
+  })
+
+  describe('whitelisted crowdsale', () => {
+    it('is whitelisted', async () => {
+      const notWhitelisted = investor3
+      await expectRevert(
+        this.crowdsale.buyTokens(notWhitelisted, { value: ether('1'), from: notWhitelisted }),
+        "WhitelistCrowdsale: beneficiary doesn't have the Whitelisted role"
+      )
     })
   })
 })
