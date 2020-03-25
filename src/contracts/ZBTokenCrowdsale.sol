@@ -1,13 +1,23 @@
-pragma solidity ^0.5.16;
+pragma solidity ^0.5.0;
 
-import "./lib/math/SafeMath.sol";
-import "./lib/crowdsale/Crowdsale.sol";
-import "./lib/crowdsale/emission/MintedCrowdsale.sol";
-import "./lib/crowdsale/validation/CappedCrowdsale.sol";
-import "./lib/crowdsale/validation/TimedCrowdsale.sol";
-import "./lib/crowdsale/validation/WhitelistCrowdsale.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/crowdsale/Crowdsale.sol";
+import "@openzeppelin/contracts/crowdsale/emission/MintedCrowdsale.sol";
+import "@openzeppelin/contracts/crowdsale/validation/CappedCrowdsale.sol";
+import "@openzeppelin/contracts/crowdsale/validation/TimedCrowdsale.sol";
+import "@openzeppelin/contracts/crowdsale/validation/WhitelistCrowdsale.sol";
+import "@openzeppelin/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
 
-contract ZBTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedCrowdsale, WhitelistCrowdsale {
+contract ZBTokenCrowdsale is
+    Crowdsale,
+    MintedCrowdsale,
+    CappedCrowdsale,
+    TimedCrowdsale,
+    WhitelistCrowdsale,
+    RefundableCrowdsale
+{
     using SafeMath for uint256;
 
     //track investor contributions
@@ -16,18 +26,22 @@ contract ZBTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedC
     mapping(address => uint256) public _contributions;
 
     constructor(
-        uint256 _rate,
-        address payable _wallet,
-        IERC20 _token,
-        uint256 _cap,
-        uint256 _openingTime,
-        uint256 _closingTime
+        uint256 rate,
+        address payable wallet,
+        IERC20 token,
+        uint256 cap,
+        uint256 openingTime,
+        uint256 closingTime,
+        uint256 goal
     )
         public
-        Crowdsale(_rate, _wallet, _token)
-        CappedCrowdsale(_cap)
-        TimedCrowdsale(_openingTime, _closingTime)
-    {}
+        Crowdsale(rate, wallet, token)
+        CappedCrowdsale(cap)
+        TimedCrowdsale(openingTime, closingTime)
+        RefundableCrowdsale(goal)
+    {
+        require(goal <= cap, "Goal cant be grater than cap");
+    }
 
     function getUserContribution(address beneficiary) public view returns (uint256) {
         return _contributions[beneficiary];
@@ -46,4 +60,16 @@ contract ZBTokenCrowdsale is Crowdsale, MintedCrowdsale, CappedCrowdsale, TimedC
         uint256 newContribution = existingContribution.add(weiAmount);
         _contributions[beneficiary] = newContribution;
     }
+
+    function _finalization() internal {
+        // if (goalReached()) {
+        //     _escrow.close();
+        //     _escrow.beneficiaryWithdraw();
+        // } else {
+        //     _escrow.enableRefunds();
+        // }
+
+        super._finalization();
+    }
+
 }

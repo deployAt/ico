@@ -25,6 +25,8 @@ describe('ZBTokenCrowdsale', () => {
   const wallet = crowdsaleWallet
   //cap
   const cap = ether('100')
+  //goal
+  const goal = ether('50')
 
   // investor caps
   const lessThanInvestorMinCap = ether('0.99')
@@ -51,16 +53,17 @@ describe('ZBTokenCrowdsale', () => {
       this.token.address,
       cap,
       openingTime,
-      closingTime
+      closingTime,
+      goal
     )
-    // Add crowdsale as a minter
+    // add crowdsale as a minter
     await this.token.addMinter(this.crowdsale.address)
 
     // add investors to crowdsale
     await this.crowdsale.addWhitelisted(investor1)
     await this.crowdsale.addWhitelisted(investor2)
 
-    //time crowdsale
+    // time crowdsale
     await time.increaseTo(openingTime.add(time.duration.hours(1)))
   })
 
@@ -174,5 +177,22 @@ describe('ZBTokenCrowdsale', () => {
         "WhitelistCrowdsale: beneficiary doesn't have the Whitelisted role"
       )
     })
+  })
+
+  describe('refundable crowdsale', () => {
+    beforeEach(async () => {
+      await this.crowdsale.buyTokens(investor1, { value: ether('1'), from: investor1 })
+    })
+
+    describe('during crowdsale', () => {
+      it('prevents the investor from claiming refund', async () => {
+        await expectRevert(
+          this.crowdsale.claimRefund(investor1),
+          'RefundableCrowdsale: not finalized'
+        )
+      })
+    })
+
+    it('x', async () => {})
   })
 })
