@@ -12,5 +12,5 @@ module.exports = {
   // blockGasLimit: 8e6, // Maximum gas per block
 }
 
-require('chai').should()
 require('@openzeppelin/test-helpers')
+require('chai').should()

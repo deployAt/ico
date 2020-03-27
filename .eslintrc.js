@@ -5,9 +5,11 @@ module.exports = {
     "@typescript-eslint",
     "mocha-no-only",
     "promise",
+    "chai-friendly"
   ],
   extends: [
     "react-app",
+    "plugin:chai-friendly/recommended"
   ],
   env: {
     "browser": true,
