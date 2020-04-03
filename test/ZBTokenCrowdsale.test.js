@@ -13,22 +13,33 @@ const {
 const ZBTokenCrowdsale = contract.fromArtifact('ZBTokenCrowdsale')
 const ZBToken = contract.fromArtifact('ZBToken')
 const RefundEscrow = contract.fromArtifact('RefundEscrow')
+const TokenTimelock = contract.fromArtifact('TokenTimelock')
 
 describe('ZBTokenCrowdsale', () => {
-  const [crowdsaleWallet, investor1, investor2, investor3] = accounts
+  const [
+    crowdsaleWallet,
+    investor1,
+    investor2,
+    investor3,
+    foundersFund,
+    foundationFund,
+    partnersFund
+  ] = accounts
 
-  //token
+  // token
   const name = 'ZBToken'
   const symbol = 'ZB'
   const decimals = 18
 
-  //crowdsale
+  // crowdsale
   const preICOrate = 500
   const icoRate = 250
   const wallet = crowdsaleWallet
-  //cap
+
+  // cap
   const cap = ether('100')
-  //goal
+
+  // goal
   const goal = ether('20')
 
   // investor caps
@@ -41,15 +52,24 @@ describe('ZBTokenCrowdsale', () => {
   const preIcoStage = 0
   const icoStage = 1
 
+  // token distribution
+  const tokenSalePercentage = 70
+  const foundersPercentage = 10
+  const fundationPercentage = 10
+  const partnersPercentage = 10
+
   before(async () => {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
     await time.advanceBlock()
   })
 
   beforeEach(async () => {
-    //time
+    // time
     this.openingTime = (await time.latest()).add(time.duration.weeks(1))
     this.closingTime = this.openingTime.add(time.duration.weeks(1))
+
+    // relase time
+    this.releaseTime = this.openingTime.add(time.duration.weeks(4))
 
     // Deploy token
     this.token = await ZBToken.new(name, symbol, decimals)
@@ -61,7 +81,11 @@ describe('ZBTokenCrowdsale', () => {
       cap,
       this.openingTime,
       this.closingTime,
-      goal
+      goal,
+      foundersFund,
+      foundationFund,
+      partnersFund,
+      this.releaseTime
     )
 
     // pause token
@@ -359,12 +383,56 @@ describe('ZBTokenCrowdsale', () => {
         const isPaused = await this.token.paused()
         isPaused.should.be.false
 
+        // enables token transfers
+        await this.token.transfer(investor2, 1, { from: investor2 })
+
+        // founders
+        let totalSupply = await this.token.totalSupply()
+        totalSupply = totalSupply.toString()
+
+        const foundersTimeLockAddress = await this.crowdsale._foundersTimeLock()
+        let foundersTimeLockBalance = await this.token.balanceOf(foundersTimeLockAddress)
+        foundersTimeLockBalance = foundersTimeLockBalance.toString()
+        foundersTimeLockBalance = foundersTimeLockBalance / 10 ** decimals
+
+        let foundersAmount = totalSupply / foundersPercentage
+        foundersAmount = foundersAmount.toString()
+        foundersAmount = foundersAmount / 10 ** decimals
+
+        foundersTimeLockBalance.toString().should.equal(foundersAmount.toString())
+
+        // can't withdraw from timelocks
+        const foundersTimelock = await TokenTimelock.at(foundersTimeLockAddress)
+        await expectRevert(
+          foundersTimelock.release(),
+          'TokenTimelock: current time is before release time'
+        )
+
+        // can withdraw from timelocks
+        await time.increaseTo(this.releaseTime.add(time.duration.seconds(1)))
+        await foundersTimelock.release()
+
+        // founders funds now have balances
+        let foundersBalance = await this.token.balanceOf(foundersFund)
+        foundersBalance = foundersBalance.toString()
+        foundersBalance = foundersBalance / 10 ** decimals
+        foundersBalance.toString().should.equal(foundersAmount.toString())
+        //and so on...
+
         // doesn not allow the investor to claim refund
         await expectRevert(
           this.crowdsale.claimRefund(investor1, { from: investor1 }),
           'RefundableCrowdsale: goal reached'
         )
       })
+    })
+  })
+
+  describe('token distribution', () => {
+    it('tracks token distribution correctly', async () => {
+      const result = await this.crowdsale._tokenSalePercentage()
+      result.should.be.bignumber.eq(new BN(tokenSalePercentage))
+      //and so on...
     })
   })
 })

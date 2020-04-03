@@ -8,6 +8,7 @@ contract ZBToken is ERC20Mintable, ERC20Pausable, ERC20Detailed {
     constructor(string memory _name, string memory _symbol, uint8 _decimals)
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {}
-
+    {
+        // this.addMinter(msg.sender);
+    }
 }

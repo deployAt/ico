@@ -3,7 +3,7 @@ pragma solidity >=0.5.0 <0.6.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20Mintable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Pausable.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin/contracts/token/ERC20/TokenTimelock.sol";
 import "@openzeppelin/contracts/crowdsale/Crowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/emission/MintedCrowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/validation/CappedCrowdsale.sol";
@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/crowdsale/validation/TimedCrowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/validation/WhitelistCrowdsale.sol";
 import "@openzeppelin/contracts/crowdsale/distribution/RefundableCrowdsale.sol";
 import "@openzeppelin/contracts/ownership/Ownable.sol";
+
 
 contract ZBTokenCrowdsale is
     Ownable,
@@ -30,6 +31,23 @@ contract ZBTokenCrowdsale is
     enum CrowdsaleStage {PreICO, ICO}
     CrowdsaleStage public _stage = CrowdsaleStage.PreICO;
 
+    // token distribution
+    uint256 public _tokenSalePercentage = 70;
+    uint256 public _foundersPercentage = 10;
+    uint256 public _fundationPercentage = 10;
+    uint256 public _partnersPercentage = 10;
+
+    // token reserve funds
+    address public _foundersFund;
+    address public _foundationFund;
+    address public _partnersFund;
+
+    // token time lock
+    uint256 public _releaseTime;
+    address public _foundersTimeLock;
+    address public _foundationTimeLock;
+    address public _partnersTimeLock;
+
     constructor(
         uint256 rate,
         address payable wallet,
@@ -37,7 +55,11 @@ contract ZBTokenCrowdsale is
         uint256 cap,
         uint256 openingTime,
         uint256 closingTime,
-        uint256 goal
+        uint256 goal,
+        address foundersFund,
+        address foundationFund,
+        address partnersFund,
+        uint256 releaseTime
     )
         public
         Crowdsale(rate, wallet, token)
@@ -46,6 +68,10 @@ contract ZBTokenCrowdsale is
         RefundableCrowdsale(goal)
     {
         require(goal <= cap, "Goal cant be grater than cap");
+        _foundersFund = foundersFund;
+        _foundationFund = foundationFund;
+        _partnersFund = partnersFund;
+        _releaseTime = releaseTime;
     }
 
     function getUserContribution(address beneficiary) public view returns (uint256) {
@@ -90,10 +116,26 @@ contract ZBTokenCrowdsale is
 
     function _finalization() internal {
         if (goalReached()) {
+            ERC20Mintable mintableToken = ERC20Mintable(address(token()));
+
+            uint256 alreadyMinted = mintableToken.totalSupply();
+
+            uint256 fintalTotalSupply = alreadyMinted.div(_tokenSalePercentage).mul(100);
+
+            _foundersTimeLock = address(new TokenTimelock(token(), _foundersFund, _releaseTime));
+            _foundationTimeLock = address(new TokenTimelock(token(), _foundationFund, _releaseTime));
+            _partnersTimeLock = address(new TokenTimelock(token(), _partnersFund, _releaseTime));
+
+            mintableToken.mint(_foundersTimeLock, fintalTotalSupply.div(_foundersPercentage));
+            mintableToken.mint(_foundationTimeLock, fintalTotalSupply.div(_fundationPercentage));
+            mintableToken.mint(_partnersTimeLock, fintalTotalSupply.div(_partnersPercentage));
+
             // stop minting
             MinterRole(address(token())).renounceMinter();
-            // unpouse the token
+            // unpause the token
             ERC20Pausable(address(token())).unpause();
+            // token._transferOwnerhship(wallet) ???
+
             // _escrow.close();
             // _escrow.beneficiaryWithdraw();
         }
@@ -104,5 +146,4 @@ contract ZBTokenCrowdsale is
 
         super._finalization();
     }
-
 }
